@@ -135,16 +135,18 @@ public class MainMenu implements MoUssdListener {
     }
 
     private void sendWebSocketCommand(int serviceCode) {
-        String command = null;
         if (serviceCode == 111) {
-            command = PropertyLoader.getProperty("command.toggle.red.on");
+            send(PropertyLoader.getProperty("command.toggle.red.on"));
         }else if(serviceCode == 112){
-            command = PropertyLoader.getProperty("command.toggle.red.off");
+            send(PropertyLoader.getProperty("command.toggle.red.off"));
         }else if (serviceCode == 121) {
-            command = PropertyLoader.getProperty("command.toggle.green.on");
+            send(PropertyLoader.getProperty("command.toggle.green.on"));
         }else if(serviceCode == 122){
-            command = PropertyLoader.getProperty("command.toggle.green.off");
+            send(PropertyLoader.getProperty("command.toggle.green.off"));
         }
+    }
+
+    private void send(String command) {
         final String finalCommand = command;
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
