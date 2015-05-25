@@ -19,7 +19,7 @@ import hms.kite.samples.api.ussd.UssdRequestSender;
 import hms.kite.samples.api.ussd.messages.MoUssdReq;
 import hms.kite.samples.api.ussd.messages.MtUssdReq;
 import hms.kite.samples.api.ussd.messages.MtUssdResp;
-import hms.sdp.samples.iot.utils.PropertyLoader;
+import hms.sdp.samples.iot.util.PropertyLoader;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -135,7 +135,7 @@ public class MainMenu implements MoUssdListener {
      * @return value
      */
     private String getText(int key) {
-        return PropertyLoader.getInstance().getText(PROPERTY_KEY_PREFIX + key);
+        return PropertyLoader.getProperty(PROPERTY_KEY_PREFIX + key);
     }
 
     /**
@@ -145,6 +145,7 @@ public class MainMenu implements MoUssdListener {
      */
     private MtUssdResp sendRequest(MtUssdReq request) throws SdpException {
         //sending request to service
+        LOGGER.info("Sending request");
         MtUssdResp response = null;
         try {
             response = ussdMtSender.sendUssdRequest(request);

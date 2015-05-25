@@ -1,33 +1,31 @@
 package hms.sdp.samples.iot.client;
 
+import hms.sdp.samples.iot.util.PropertyLoader;
 import hms.sdp.samples.iot.ws.WebSocketClientEndpoint;
+import org.apache.log4j.Logger;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
 public class Connector {
 
+    private static Logger logger = Logger.getLogger(Connector.class);
 
-    public static void connect(){
+    public static void connect(String jsonMessage){
         try {
-            // open websocket
-            final WebSocketClientEndpoint clientEndPoint = new WebSocketClientEndpoint(new URI("ws://api.hsenidmobile.com:9008/iot/connect?token=APP_1234"));
+            final WebSocketClientEndpoint clientEndPoint = new WebSocketClientEndpoint(new URI(PropertyLoader.getProperty("web.socket.endpoint")));
 
-            // add listener
             clientEndPoint.addMessageHandler(new WebSocketClientEndpoint.MessageHandler() {
-                public void handleMessage(String message) {
-                    System.out.println(message);
+                public void handleMessage(String msg) {
+                    logger.info("Sending message : " + msg);
                 }
             });
-
-            // send message to websocket
-            clientEndPoint.sendMessage("{'id':'123456','type':'command','content':'d5=1;','device':'DEVICE_1234'}");
-
+            clientEndPoint.sendMessage(jsonMessage);
             // wait 5 seconds for messages from websocket
-            Thread.sleep(5000);
+//            Thread.sleep(5000);
 
-        } catch (InterruptedException ex) {
-            System.err.println("InterruptedException exception: " + ex.getMessage());
+//        } catch (InterruptedException ex) {
+//            System.err.println("InterruptedException exception: " + ex.getMessage());
         } catch (URISyntaxException ex) {
             System.err.println("URISyntaxException exception: " + ex.getMessage());
         }
