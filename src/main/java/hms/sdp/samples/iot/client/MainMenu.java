@@ -77,8 +77,6 @@ public class MainMenu implements MoUssdListener {
      * @param moUssdReq
      */
     private void processRequest(MoUssdReq moUssdReq) throws SdpException {
-
-        System.out.println("process request called");
         //exit request - session destroy
         if(moUssdReq.getMessage().equals(EXIT_SERVICE_CODE)){
             terminateSession(moUssdReq);
@@ -115,8 +113,6 @@ public class MainMenu implements MoUssdListener {
      * @return MtUssdReq    - filled request object
      */
     private MtUssdReq createRequest(MoUssdReq moUssdReq, String menuContent, String ussdOperation) {
-        System.out.println("ussd operation : " + ussdOperation);
-        System.out.println("menu content : " + menuContent);
         final MtUssdReq request = new MtUssdReq();
         request.setApplicationId(moUssdReq.getApplicationId());
         request.setEncoding(moUssdReq.getEncoding());
@@ -139,31 +135,28 @@ public class MainMenu implements MoUssdListener {
     }
 
     private void sendWebSocketCommand(int serviceCode) {
+        String command = null;
         if (serviceCode == 111) {
-            Executors.newSingleThreadExecutor().execute(new Runnable() {
-                @Override
-                public void run() {
-                    String command = PropertyLoader.getProperty("command.toggle.on");
-                    logger.info("Sending web socket command :" + command);
-                    Connector.send(command);
-                }
-            });
+            command = PropertyLoader.getProperty("command.toggle.red.on");
         }else if(serviceCode == 112){
-            logger.info("Sending web socket command Off");
-            Executors.newSingleThreadExecutor().execute(new Runnable() {
-                @Override
-                public void run() {
-                    String command = PropertyLoader.getProperty("command.toggle.off");
-                    logger.info("Sending web socket command :" + command);
-                    Connector.send(command);
-                }
-            });
+            command = PropertyLoader.getProperty("command.toggle.red.off");
+        }else if (serviceCode == 121) {
+            command = PropertyLoader.getProperty("command.toggle.green.on");
+        }else if(serviceCode == 122){
+            command = PropertyLoader.getProperty("command.toggle.green.off");
         }
+        final String finalCommand = command;
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                logger.info("Sending web socket command :" + finalCommand);
+                Connector.send(finalCommand);
+            }
+        });
     }
 
     private void sendMtRequest(MtUssdReq request) throws SdpException {
-        //sending request to service
-        MtUssdResp response = null;
+        MtUssdResp response;
         try {
             response = ussdMtSender.sendUssdRequest(request);
         } catch (SdpException e) {
@@ -196,7 +189,6 @@ public class MainMenu implements MoUssdListener {
      * @throws SdpException
      */
     private void terminateSession(MoUssdReq moUssdReq) throws SdpException {
-        System.out.println("*********** terminating");
         final MtUssdReq request = createRequest(moUssdReq, "", USSD_OPERATION_MT_FIN);
         sendMtRequest(request);
     }
@@ -244,7 +236,6 @@ public class MainMenu implements MoUssdListener {
         //create service codes for child menus based on the main menu codes
         if (menuState.size() > 0 && menuState.get(menuState.size() - 1) != 0) {
             String generatedChildServiceCode = "" + menuState.get(menuState.size() - 1) + serviceCode;
-            System.out.println("generatedChildServiceCode" + generatedChildServiceCode);
             serviceCode = Integer.parseInt(generatedChildServiceCode);
         }
 
@@ -260,9 +251,7 @@ public class MainMenu implements MoUssdListener {
         String menuContent;
         try {
             //build menu contents
-            System.out.println("menu level : " + selection);
             menuContent = getText(selection);
-            System.out.println("selection : " + menuContent);
         } catch(MissingResourceException e) {
             //back to main menu
             menuContent = getText((byte)0);

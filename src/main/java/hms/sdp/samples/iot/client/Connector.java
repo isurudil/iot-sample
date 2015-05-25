@@ -21,11 +21,6 @@ public class Connector {
                 }
             });
             clientEndPoint.sendMessage(jsonMessage);
-            // wait 5 seconds for messages from websocket
-//            Thread.sleep(5000);
-
-//        } catch (InterruptedException ex) {
-//            System.err.println("InterruptedException exception: " + ex.getMessage());
         } catch (URISyntaxException ex) {
             logger.error("URISyntaxException exception: " , ex);
         }

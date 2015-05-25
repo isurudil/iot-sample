@@ -3,11 +3,6 @@ package hms.sdp.samples.iot.ws;
 import javax.websocket.*;
 import java.net.URI;
 
-/**
- * ChatServer Client
- *
- * @author Jiji_Sasidharan
- */
 @ClientEndpoint
 public class WebSocketClientEndpoint {
 
@@ -30,7 +25,6 @@ public class WebSocketClientEndpoint {
      */
     @OnOpen
     public void onOpen(Session userSession) {
-        System.out.println("opening websocket");
         this.userSession = userSession;
     }
 
@@ -42,7 +36,6 @@ public class WebSocketClientEndpoint {
      */
     @OnClose
     public void onClose(Session userSession, CloseReason reason) {
-        System.out.println("closing websocket");
         this.userSession = null;
     }
 
@@ -53,7 +46,6 @@ public class WebSocketClientEndpoint {
      */
     @OnMessage
     public void onMessage(String message) {
-        System.out.println("on message");
         if (this.messageHandler != null) {
             this.messageHandler.handleMessage(message);
         }
@@ -80,7 +72,6 @@ public class WebSocketClientEndpoint {
     /**
      * Message handler.
      *
-     * @author Jiji_Sasidharan
      */
     public static interface MessageHandler {
 
