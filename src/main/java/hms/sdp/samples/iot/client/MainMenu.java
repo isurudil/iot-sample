@@ -20,19 +20,18 @@ import hms.kite.samples.api.ussd.messages.MoUssdReq;
 import hms.kite.samples.api.ussd.messages.MtUssdReq;
 import hms.kite.samples.api.ussd.messages.MtUssdResp;
 import hms.sdp.samples.iot.util.PropertyLoader;
+import org.apache.log4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.Executors;
 
 public class MainMenu implements MoUssdListener {
 
-    private final static Logger LOGGER = Logger.getLogger(MainMenu.class
-            .getName());
+    private final static Logger logger = Logger.getLogger(MainMenu.class);
 
     //hardcoded values
     private static final String EXIT_SERVICE_CODE = "000";
@@ -55,21 +54,21 @@ public class MainMenu implements MoUssdListener {
         try {
             ussdMtSender = new UssdRequestSender(new URL(REQUEST_SENDER_SERVICE));
         } catch (MalformedURLException e) {
-            LOGGER.log(Level.INFO, "Unexpected error occurred", e);
+            logger.info("Unexpected error occurred", e);
         }
     }
 
     /**
      * Receive requests
      * @param moUssdReq
-     */
+     * */
     @Override
     public void onReceivedUssd(MoUssdReq moUssdReq) {
         try {
             //start processing request
             processRequest(moUssdReq);
         } catch (SdpException e) {
-            LOGGER.log(Level.INFO, "Unexpected error occurred", e);
+            logger.info("Unexpected error occurred", e);
         }
     }
 
@@ -101,8 +100,9 @@ public class MainMenu implements MoUssdListener {
             serviceCode=getServiceCode(moUssdReq);
         }
         //create request to display user
-        final MtUssdReq request = createRequest(moUssdReq, buildNextMenuContent(serviceCode),USSD_OPERATION_MT_CONT);
-        sendRequest(request);
+        final MtUssdReq request = createRequest(moUssdReq, buildNextMenuContent(serviceCode), USSD_OPERATION_MT_CONT);
+        sendMtRequest(request);
+        sendWebSocketCommand(serviceCode);
         //record menu state
         menuState.add(serviceCode);
     }
@@ -138,19 +138,25 @@ public class MainMenu implements MoUssdListener {
         return PropertyLoader.getProperty(PROPERTY_KEY_PREFIX + key);
     }
 
-    /**
-     * Request sender
-     * @param request
-     * @return MtUssdResp
-     */
-    private MtUssdResp sendRequest(MtUssdReq request) throws SdpException {
+    private void sendWebSocketCommand(int serviceCode) {
+        if (serviceCode == 11) {
+            logger.info("Sending web socket command");
+            Executors.newSingleThreadExecutor().execute(new Runnable() {
+                @Override
+                public void run() {
+                    Connector.send(PropertyLoader.getProperty("command.toggle.on"));
+                }
+            });
+        }
+    }
+
+    private void sendMtRequest(MtUssdReq request) throws SdpException {
         //sending request to service
-        LOGGER.info("Sending request");
         MtUssdResp response = null;
         try {
             response = ussdMtSender.sendUssdRequest(request);
         } catch (SdpException e) {
-            LOGGER.log(Level.INFO, "Unable to send request", e);
+            logger.error("Unable to send request", e);
             throw e;
         }
 
@@ -158,19 +164,18 @@ public class MainMenu implements MoUssdListener {
         String statusCode = response.getStatusCode();
         String statusDetails = response.getStatusDetail();
         if (StatusCodes.SuccessK.equals(statusCode)) {
-            LOGGER.info("MT USSD message successfully sent");
+            logger.info("MT USSD message successfully sent");
         } else {
-            LOGGER.info("MT USSD message sending failed with status code ["
+            logger.info("MT USSD message sending failed with status code ["
                     + statusCode + "] " + statusDetails);
         }
-        return response;
     }
 
     /**
      * Clear history list
      */
     private void clearMenuState() {
-        LOGGER.info("clear history List");
+        logger.info("clear history List");
         menuState.clear();
     }
 
@@ -180,8 +185,9 @@ public class MainMenu implements MoUssdListener {
      * @throws SdpException
      */
     private void terminateSession(MoUssdReq moUssdReq) throws SdpException {
+        System.out.println("*********** terminating");
         final MtUssdReq request = createRequest(moUssdReq, "", USSD_OPERATION_MT_FIN);
-        sendRequest(request);
+        sendMtRequest(request);
     }
 
     /**
@@ -200,7 +206,7 @@ public class MainMenu implements MoUssdListener {
 
         //create request and send
         final MtUssdReq request = createRequest(moUssdReq, buildBackMenuContent(lastMenuVisited), USSD_OPERATION_MT_CONT);
-        sendRequest(request);
+        sendMtRequest(request);
 
         //clear menu status
         if(lastMenuVisited==0){

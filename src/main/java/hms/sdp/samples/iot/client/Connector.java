@@ -11,7 +11,7 @@ public class Connector {
 
     private static Logger logger = Logger.getLogger(Connector.class);
 
-    public static void connect(String jsonMessage){
+    public static void send(String jsonMessage){
         try {
             final WebSocketClientEndpoint clientEndPoint = new WebSocketClientEndpoint(new URI(PropertyLoader.getProperty("web.socket.endpoint")));
 
@@ -27,7 +27,7 @@ public class Connector {
 //        } catch (InterruptedException ex) {
 //            System.err.println("InterruptedException exception: " + ex.getMessage());
         } catch (URISyntaxException ex) {
-            System.err.println("URISyntaxException exception: " + ex.getMessage());
+            logger.error("URISyntaxException exception: " , ex);
         }
     }
 }

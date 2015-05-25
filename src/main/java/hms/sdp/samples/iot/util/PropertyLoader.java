@@ -29,7 +29,7 @@ public class PropertyLoader {
     }
 
     static {
-        InputStream inputStream = PropertyLoader.class.getClassLoader().getResourceAsStream("core_engine.properties");
+        InputStream inputStream = PropertyLoader.class.getClassLoader().getResourceAsStream("app.properties");
         try {
             properties.load(inputStream);
         } catch (IOException e) {
