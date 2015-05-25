@@ -179,7 +179,6 @@ public class MainMenu implements MoUssdListener {
      * @throws SdpException
      */
     private void terminateSession(MoUssdReq moUssdReq) throws SdpException {
-        System.out.println("*********** terminating");
         final MtUssdReq request = createRequest(moUssdReq, "", USSD_OPERATION_MT_FIN);
         sendRequest(request);
     }
