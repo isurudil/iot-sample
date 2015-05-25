@@ -139,12 +139,23 @@ public class MainMenu implements MoUssdListener {
     }
 
     private void sendWebSocketCommand(int serviceCode) {
-        if (serviceCode == 11) {
-            logger.info("Sending web socket command");
+        if (serviceCode == 111) {
             Executors.newSingleThreadExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
-                    Connector.send(PropertyLoader.getProperty("command.toggle.on"));
+                    String command = PropertyLoader.getProperty("command.toggle.on");
+                    logger.info("Sending web socket command :" + command);
+                    Connector.send(command);
+                }
+            });
+        }else if(serviceCode == 112){
+            logger.info("Sending web socket command Off");
+            Executors.newSingleThreadExecutor().execute(new Runnable() {
+                @Override
+                public void run() {
+                    String command = PropertyLoader.getProperty("command.toggle.off");
+                    logger.info("Sending web socket command :" + command);
+                    Connector.send(command);
                 }
             });
         }
