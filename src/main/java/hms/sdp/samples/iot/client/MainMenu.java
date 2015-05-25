@@ -146,13 +146,12 @@ public class MainMenu implements MoUssdListener {
         }
     }
 
-    private void send(String command) {
-        final String finalCommand = command;
+    private void send(final String command) {
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                logger.info("Sending web socket command :" + finalCommand);
-                Connector.send(finalCommand);
+                logger.info("Sending web socket command :" + command);
+                Connector.send(command);
             }
         });
     }
