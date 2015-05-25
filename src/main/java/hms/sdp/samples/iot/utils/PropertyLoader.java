@@ -1,4 +1,4 @@
-package hms.sdp.samples.ussd.utils;
+package hms.sdp.samples.iot.utils;
 
 import java.io.IOException;
 import java.io.InputStream;

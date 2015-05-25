@@ -9,7 +9,7 @@
         <servlet-class>hms.kite.samples.api.ussd.MoUssdReceiver</servlet-class>
         <init-param>
             <param-name>ussdReceiver</param-name>
-            <param-value>hms.sdp.samples.ussd.client.MainMenu</param-value>
+            <param-value>hms.sdp.samples.iot.client.MainMenu</param-value>
         </init-param>
     </servlet>
 

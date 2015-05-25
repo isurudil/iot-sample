@@ -10,7 +10,7 @@
  *   property rights in these materials.
  *   @auther emil
  */
-package hms.sdp.samples.ussd.client;
+package hms.sdp.samples.iot.client;
 
 import hms.kite.samples.api.SdpException;
 import hms.kite.samples.api.StatusCodes;
@@ -19,7 +19,7 @@ import hms.kite.samples.api.ussd.UssdRequestSender;
 import hms.kite.samples.api.ussd.messages.MoUssdReq;
 import hms.kite.samples.api.ussd.messages.MtUssdReq;
 import hms.kite.samples.api.ussd.messages.MtUssdResp;
-import hms.sdp.samples.ussd.utils.PropertyLoader;
+import hms.sdp.samples.iot.utils.PropertyLoader;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -44,7 +44,7 @@ public class MainMenu implements MoUssdListener {
     private static final String USSD_OPERATION_MT_FIN="mt-fin";
 
     //menu state saving for back button
-    private List<Byte> menuState = new ArrayList<Byte>();
+    private List<Integer> menuState = new ArrayList<Integer>();
 
     //service to send the request
     private UssdRequestSender ussdMtSender;
@@ -79,6 +79,7 @@ public class MainMenu implements MoUssdListener {
      */
     private void processRequest(MoUssdReq moUssdReq) throws SdpException {
 
+        System.out.println("process request called");
         //exit request - session destroy
         if(moUssdReq.getMessage().equals(EXIT_SERVICE_CODE)){
             terminateSession(moUssdReq);
@@ -92,7 +93,7 @@ public class MainMenu implements MoUssdListener {
         }
 
         //get current service code
-        byte serviceCode;
+        int serviceCode;
         if (moUssdReq.getMessage().equals(INIT_SERVICE_CODE)) {
             serviceCode=0;
             clearMenuState();
@@ -114,6 +115,8 @@ public class MainMenu implements MoUssdListener {
      * @return MtUssdReq    - filled request object
      */
     private MtUssdReq createRequest(MoUssdReq moUssdReq, String menuContent, String ussdOperation) {
+        System.out.println("ussd operation : " + ussdOperation);
+        System.out.println("menu content : " + menuContent);
         final MtUssdReq request = new MtUssdReq();
         request.setApplicationId(moUssdReq.getApplicationId());
         request.setEncoding(moUssdReq.getEncoding());
@@ -131,7 +134,7 @@ public class MainMenu implements MoUssdListener {
      * @param key
      * @return value
      */
-    private String getText(byte key) {
+    private String getText(int key) {
         return PropertyLoader.getInstance().getText(PROPERTY_KEY_PREFIX + key);
     }
 
@@ -176,6 +179,7 @@ public class MainMenu implements MoUssdListener {
      * @throws SdpException
      */
     private void terminateSession(MoUssdReq moUssdReq) throws SdpException {
+        System.out.println("*********** terminating");
         final MtUssdReq request = createRequest(moUssdReq, "", USSD_OPERATION_MT_FIN);
         sendRequest(request);
     }
@@ -186,7 +190,7 @@ public class MainMenu implements MoUssdListener {
      * @throws SdpException
      */
     private void backButtonHandle(MoUssdReq moUssdReq) throws SdpException {
-        byte lastMenuVisited = 0;
+        int lastMenuVisited = 0;
 
         //remove last menu when back
         if(menuState.size()>0){
@@ -202,7 +206,7 @@ public class MainMenu implements MoUssdListener {
         if(lastMenuVisited==0){
             clearMenuState();
             //add 0 to menu state ,finally its in main menu
-            menuState.add((byte)0);
+            menuState.add(0);
         }
 
     }
@@ -212,8 +216,8 @@ public class MainMenu implements MoUssdListener {
      * @param moUssdReq
      * @return serviceCode
      */
-    private byte getServiceCode(MoUssdReq moUssdReq){
-        byte serviceCode=0;
+    private int getServiceCode(MoUssdReq moUssdReq){
+        int serviceCode=0;
         try {
             serviceCode=Byte.parseByte(moUssdReq.getMessage());
         } catch (NumberFormatException e) {
@@ -223,7 +227,8 @@ public class MainMenu implements MoUssdListener {
         //create service codes for child menus based on the main menu codes
         if (menuState.size() > 0 && menuState.get(menuState.size() - 1) != 0) {
             String generatedChildServiceCode = "" + menuState.get(menuState.size() - 1) + serviceCode;
-            serviceCode = Byte.parseByte(generatedChildServiceCode);
+            System.out.println("generatedChildServiceCode" + generatedChildServiceCode);
+            serviceCode = Integer.parseInt(generatedChildServiceCode);
         }
 
         return serviceCode;
@@ -234,11 +239,13 @@ public class MainMenu implements MoUssdListener {
      * @param selection
      * @return menuContent
      */
-    private String buildNextMenuContent(byte selection){
+    private String buildNextMenuContent(int selection){
         String menuContent;
         try {
             //build menu contents
+            System.out.println("menu level : " + selection);
             menuContent = getText(selection);
+            System.out.println("selection : " + menuContent);
         } catch(MissingResourceException e) {
             //back to main menu
             menuContent = getText((byte)0);
@@ -251,7 +258,7 @@ public class MainMenu implements MoUssdListener {
      * @param selection
      * @return menuContent
      */
-    private String buildBackMenuContent(byte selection){
+    private String buildBackMenuContent(int selection){
         String menuContent;
         try {
             //build menu contents
