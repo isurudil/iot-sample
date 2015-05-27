@@ -30,8 +30,6 @@ public class MainMenu implements MoUssdListener {
 
     private final static Logger logger = Logger.getLogger(MainMenu.class);
 
-    private static final String REQUEST_SENDER_SERVICE;
-
     private static final String USSD_OPERATION_MT_FIN="mt-fin";
     public static int status = 0;
 
@@ -42,7 +40,7 @@ public class MainMenu implements MoUssdListener {
     public void init() {
         //create and initialize service
         try {
-            ussdMtSender = new UssdRequestSender(new URL(REQUEST_SENDER_SERVICE));
+            ussdMtSender = new UssdRequestSender(new URL(PropertyLoader.getProperty("sender.url")));
         } catch (MalformedURLException e) {
             logger.info("Unexpected error occurred", e);
         }
@@ -146,9 +144,5 @@ public class MainMenu implements MoUssdListener {
             logger.info("MT USSD message sending failed with status code ["
                     + statusCode + "] " + statusDetails);
         }
-    }
-
-    static {
-        REQUEST_SENDER_SERVICE = PropertyLoader.getProperty("sender.url");
     }
 }
