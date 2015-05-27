@@ -24,26 +24,16 @@ import org.apache.log4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.MissingResourceException;
 import java.util.concurrent.Executors;
 
 public class MainMenu implements MoUssdListener {
 
     private final static Logger logger = Logger.getLogger(MainMenu.class);
 
-    //hardcoded values
-    private static final String EXIT_SERVICE_CODE = "000";
-    private static final String BACK_SERVICE_CODE = "999";
-    private static final String INIT_SERVICE_CODE = "#678*";
-    private static final String REQUEST_SENDER_SERVICE = "http://localhost:7000/ussd/send";
-    private static final String PROPERTY_KEY_PREFIX = "menu.level.";
-    private static final String USSD_OPERATION_MT_CONT="mt-cont";
-    private static final String USSD_OPERATION_MT_FIN="mt-fin";
+    private static final String REQUEST_SENDER_SERVICE;
 
-    //menu state saving for back button
-    private List<Integer> menuState = new ArrayList<Integer>();
+    private static final String USSD_OPERATION_MT_FIN="mt-fin";
+    public static int status = 0;
 
     //service to send the request
     private UssdRequestSender ussdMtSender;
@@ -77,32 +67,28 @@ public class MainMenu implements MoUssdListener {
      * @param moUssdReq
      */
     private void processRequest(MoUssdReq moUssdReq) throws SdpException {
-        //exit request - session destroy
-        if(moUssdReq.getMessage().equals(EXIT_SERVICE_CODE)){
-            terminateSession(moUssdReq);
-            return;//completed work and return
-        }
-
-        //back button handling
-        if (moUssdReq.getMessage().equals(BACK_SERVICE_CODE)) {
-            backButtonHandle(moUssdReq);
-            return;//completed work and return
-        }
-
-        //get current service code
-        int serviceCode;
-        if (moUssdReq.getMessage().equals(INIT_SERVICE_CODE)) {
-            serviceCode=0;
-            clearMenuState();
-        }else{
-            serviceCode=getServiceCode(moUssdReq);
-        }
-        //create request to display user
-        final MtUssdReq request = createRequest(moUssdReq, buildNextMenuContent(serviceCode), USSD_OPERATION_MT_CONT);
+        final MtUssdReq request = createRequest(moUssdReq, createResponseText(), USSD_OPERATION_MT_FIN);
+        sendWebSocketCommand();
+        changeStatus();
         sendMtRequest(request);
-        sendWebSocketCommand(serviceCode);
-        //record menu state
-        menuState.add(serviceCode);
+    }
+
+    private void changeStatus() {
+        if (status == 0) {
+            status = 1;
+        } else {
+            status = 0;
+        }
+    }
+
+    private String createResponseText() {
+        String response;
+        if (status == 0) {
+            response = "Switched Om";
+        } else {
+            response = "Switched Off";
+        }
+        return response;
     }
 
     /**
@@ -125,24 +111,11 @@ public class MainMenu implements MoUssdListener {
         return request;
     }
 
-    /**
-     * load a property from ussdmenu.properties
-     * @param key
-     * @return value
-     */
-    private String getText(int key) {
-        return PropertyLoader.getProperty(PROPERTY_KEY_PREFIX + key);
-    }
-
-    private void sendWebSocketCommand(int serviceCode) {
-        if (serviceCode == 111) {
-            send(PropertyLoader.getProperty("command.toggle.red.on"));
-        }else if(serviceCode == 112){
-            send(PropertyLoader.getProperty("command.toggle.red.off"));
-        }else if (serviceCode == 121) {
-            send(PropertyLoader.getProperty("command.toggle.green.on"));
-        }else if(serviceCode == 122){
-            send(PropertyLoader.getProperty("command.toggle.green.off"));
+    private void sendWebSocketCommand() {
+        if (status == 0) {
+            send(PropertyLoader.getProperty("command.toggle.on"));
+        } else if (status == 1) {
+            send(PropertyLoader.getProperty("command.toggle.off"));
         }
     }
 
@@ -164,7 +137,6 @@ public class MainMenu implements MoUssdListener {
             logger.error("Unable to send request", e);
             throw e;
         }
-
         //response status
         String statusCode = response.getStatusCode();
         String statusDetails = response.getStatusDetail();
@@ -176,106 +148,7 @@ public class MainMenu implements MoUssdListener {
         }
     }
 
-    /**
-     * Clear history list
-     */
-    private void clearMenuState() {
-        logger.info("clear history List");
-        menuState.clear();
+    static {
+        REQUEST_SENDER_SERVICE = PropertyLoader.getProperty("sender.url");
     }
-
-    /**
-     * Terminate session
-     * @param moUssdReq
-     * @throws SdpException
-     */
-    private void terminateSession(MoUssdReq moUssdReq) throws SdpException {
-        final MtUssdReq request = createRequest(moUssdReq, "", USSD_OPERATION_MT_FIN);
-        sendMtRequest(request);
-    }
-
-    /**
-     * Handlling back button with menu state
-     * @param moUssdReq
-     * @throws SdpException
-     */
-    private void backButtonHandle(MoUssdReq moUssdReq) throws SdpException {
-        int lastMenuVisited = 0;
-
-        //remove last menu when back
-        if(menuState.size()>0){
-            menuState.remove(menuState.size() - 1);
-            lastMenuVisited = menuState.get(menuState.size() - 1);
-        }
-
-        //create request and send
-        final MtUssdReq request = createRequest(moUssdReq, buildBackMenuContent(lastMenuVisited), USSD_OPERATION_MT_CONT);
-        sendMtRequest(request);
-
-        //clear menu status
-        if(lastMenuVisited==0){
-            clearMenuState();
-            //add 0 to menu state ,finally its in main menu
-            menuState.add(0);
-        }
-
-    }
-
-    /**
-     * Create service code to navigate through menu and for property loading
-     * @param moUssdReq
-     * @return serviceCode
-     */
-    private int getServiceCode(MoUssdReq moUssdReq){
-        int serviceCode=0;
-        try {
-            serviceCode=Byte.parseByte(moUssdReq.getMessage());
-        } catch (NumberFormatException e) {
-            return serviceCode;
-        }
-
-        //create service codes for child menus based on the main menu codes
-        if (menuState.size() > 0 && menuState.get(menuState.size() - 1) != 0) {
-            String generatedChildServiceCode = "" + menuState.get(menuState.size() - 1) + serviceCode;
-            serviceCode = Integer.parseInt(generatedChildServiceCode);
-        }
-
-        return serviceCode;
-    }
-
-    /**
-     * Build next menu based on the service code
-     * @param selection
-     * @return menuContent
-     */
-    private String buildNextMenuContent(int selection){
-        String menuContent;
-        try {
-            //build menu contents
-            menuContent = getText(selection);
-        } catch(MissingResourceException e) {
-            //back to main menu
-            menuContent = getText((byte)0);
-        }
-        return menuContent;
-    }
-
-    /**
-     * Build back menu based on the service code
-     * @param selection
-     * @return menuContent
-     */
-    private String buildBackMenuContent(int selection){
-        String menuContent;
-        try {
-            //build menu contents
-            menuContent = getText(selection);
-
-        } catch(MissingResourceException e) {
-            //back to main menu
-            menuContent = getText((byte)0);
-        }
-        return menuContent;
-    }
-
 }

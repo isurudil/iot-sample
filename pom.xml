@@ -17,13 +17,6 @@
             <scope>system</scope>
         </dependency>
         <dependency>
-            <groupId>org</groupId>
-            <artifactId>java_websocket</artifactId>
-            <version>1.0</version>
-            <systemPath>${basedir}/lib/java_websocket.jar</systemPath>
-            <scope>system</scope>
-        </dependency>
-        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>1.7.2</version>
